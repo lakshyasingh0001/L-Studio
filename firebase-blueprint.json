@@ -1,0 +1,125 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Public profile and contact info for an authenticated user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The unique Firebase Auth UID" },
+        "username": { "type": "string", "description": "Unique handle e.g. @username" },
+        "displayName": { "type": "string", "description": "Full name or nickname" },
+        "phoneNumber": { "type": "string", "description": "Phone number or mobile identifier" },
+        "email": { "type": "string", "description": "User email address" },
+        "avatarUrl": { "type": "string", "description": "Profile picture URL" },
+        "statusMessage": { "type": "string", "description": "Custom bio or status" },
+        "publicKeyFingerprint": { "type": "string", "description": "Cryptographic key fingerprint" },
+        "isOnline": { "type": "boolean", "description": "Whether user is actively online" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "username", "displayName", "createdAt"]
+    },
+    "ChatRoom": {
+      "title": "ChatRoom",
+      "description": "Direct 1-on-1 or group conversation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "isGroup": { "type": "boolean" },
+        "participantIds": { "type": "array" },
+        "adminIds": { "type": "array" },
+        "avatarUrl": { "type": "string" },
+        "description": { "type": "string" },
+        "lastMessageText": { "type": "string" },
+        "lastMessageTime": { "type": "string", "format": "date-time" },
+        "unreadCount": { "type": "integer" },
+        "isEncrypted": { "type": "boolean" },
+        "safetyNumber": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "isGroup", "participantIds", "createdAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Single encrypted message within a chat room",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "chatId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "text": { "type": "string" },
+        "type": { "type": "string", "enum": ["TEXT", "IMAGE", "VOICE", "SYSTEM"] },
+        "mediaUrl": { "type": "string" },
+        "voiceDurationSec": { "type": "integer" },
+        "voiceWaveform": { "type": "array" },
+        "reactions": { "type": "object" },
+        "isEncrypted": { "type": "boolean" },
+        "encryptedCiphertext": { "type": "string" },
+        "initializationVector": { "type": "string" },
+        "status": { "type": "string", "enum": ["SENT", "DELIVERED", "READ"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "chatId", "senderId", "senderName", "type", "createdAt"]
+    },
+    "UserStory": {
+      "title": "UserStory",
+      "description": "24-hour ephemeral status story",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorAvatar": { "type": "string" },
+        "backgroundGradientIndex": { "type": "integer" },
+        "caption": { "type": "string" },
+        "filterName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "viewsCount": { "type": "integer" }
+      },
+      "required": ["id", "userId", "authorName", "createdAt", "expiresAt"]
+    },
+    "FriendRequest": {
+      "title": "FriendRequest",
+      "description": "Contact request between users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fromUserId": { "type": "string" },
+        "fromUserName": { "type": "string" },
+        "fromUserHandle": { "type": "string" },
+        "fromUserAvatar": { "type": "string" },
+        "toUserId": { "type": "string" },
+        "message": { "type": "string" },
+        "status": { "type": "string", "enum": ["PENDING", "ACCEPTED", "REJECTED"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "fromUserId", "toUserId", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile records indexed by auth UID"
+    },
+    "/chats/{chatId}": {
+      "schema": "ChatRoom",
+      "description": "Conversation threads accessible to participating users"
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Messages inside a conversation thread"
+    },
+    "/stories/{storyId}": {
+      "schema": "UserStory",
+      "description": "Ephemeral 24-hour stories published by users"
+    },
+    "/friendRequests/{requestId}": {
+      "schema": "FriendRequest",
+      "description": "Contact requests between users"
+    }
+  }
+}

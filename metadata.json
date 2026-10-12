@@ -1,0 +1,6 @@
+{
+  "name": "L Chat",
+  "description": "Personalized chatting app with end-to-end encrypted messaging, group chats, ephemeral 24h stories, reactions, and voice calls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

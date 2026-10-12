@@ -1,0 +1,88 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time;
+      allow update: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       incoming().userId == existing().userId;
+      allow delete: if false;
+    }
+
+    // Chats Collection (1-on-1 and Group Chats)
+    match /chats/{chatId} {
+      allow get, list: if isSignedIn() && (request.auth.uid in existing().participantIds);
+      allow create: if isSignedIn() &&
+                       (request.auth.uid in incoming().participantIds) &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time;
+      allow update: if isSignedIn() && (request.auth.uid in existing().participantIds);
+      allow delete: if isSignedIn() && (
+                       (existing().isGroup && request.auth.uid in existing().adminIds) ||
+                       (!existing().isGroup && request.auth.uid in existing().participantIds)
+                     );
+
+      // Messages Subcollection
+      match /messages/{messageId} {
+        allow get, list: if isSignedIn() &&
+                            (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds);
+        allow create: if isSignedIn() &&
+                         (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds) &&
+                         incoming().senderId == request.auth.uid &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time;
+        allow update: if isSignedIn() &&
+                         (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds);
+        allow delete: if isSignedIn() && existing().senderId == request.auth.uid;
+      }
+    }
+
+    // 24-Hour Ephemeral Stories Collection
+    match /stories/{storyId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time;
+      allow update: if isSignedIn(); // allows view increments
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // Friend / Contact Requests
+    match /friendRequests/{requestId} {
+      allow get, list: if isSignedIn() &&
+                          (existing().fromUserId == request.auth.uid || existing().toUserId == request.auth.uid);
+      allow create: if isSignedIn() &&
+                       incoming().fromUserId == request.auth.uid &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time;
+      allow update, delete: if isSignedIn() &&
+                               (existing().fromUserId == request.auth.uid || existing().toUserId == request.auth.uid);
+    }
+  }
+}
